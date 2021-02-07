@@ -14,4 +14,4 @@ DATA_PATH = Path(
     os.getenv("BIRBNET_TWITTER_DATA_PATH", Path.home() / "data" / "birbnet")
 )
 
-MAX_FOLLOW_RESULTS = 1000
+MAX_RESULTS = 1000
