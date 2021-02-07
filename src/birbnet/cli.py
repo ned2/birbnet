@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional
 
-import jsonlines
 import typer
 
 from . import birb
@@ -26,14 +25,13 @@ def get_followers(
     ),
     stop_at: int = typer.Option(None, help="Maximum number of results to be returned")
 ):
-    output_path = config.DATA_PATH / "followers" / f"{user_id}.jsonl"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    users = birb.get_followers(user_id, stop_at=stop_at)
-    with jsonlines.open(output_path, "w") as writer:
-        writer.write_all(users)
-    typer.echo(f"Retrieved and wrote {len(users)} to {output_path}.")
+    graph = birb.BirbGraph(edge_type="followers")
+    graph.set_user(user_id)
+    users = graph.get_users(stop_at=stop_at)
+    graph.write_users(users)
+    typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
 
-
+    
 @app.command()
 def get_following(
     user_id: Optional[str] = typer.Argument(
@@ -43,10 +41,8 @@ def get_following(
     ),
     stop_at: int = typer.Option(None, help="Maximum number of results to be returned")
 ):
-    output_path = config.DATA_PATH / "following" / f"{user_id}.jsonl"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    users = birb.get_following(user_id, stop_at=stop_at)
-    with jsonlines.open(output_path, "w") as writer:
-        writer.write_all(users)
-
-    typer.echo(f"Retrieved and wrote {len(users)} to {output_path}.")
+    graph = birb.BirbGraph(edge_type="following")
+    graph.set_user(user_id)
+    users = graph.get_users(stop_at=stop_at)
+    graph.write_users(users)
+    typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
