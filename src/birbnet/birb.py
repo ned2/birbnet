@@ -1,6 +1,8 @@
+from enum import Enum
 import os
 import json
 from functools import partial
+from pathlib import Path
 
 import jsonlines
 import requests
@@ -13,6 +15,11 @@ from .exceptions import MisconfiguredException
 FIFTEEN_MINUTES = 900
 
 
+class EdgeType(Enum):
+    FOLLOWING = "following"
+    FOLLOWERS = "followers"
+
+
 # traverse graph:
 # parameters: depth to proceed from seed
 # start at seed
@@ -21,33 +28,33 @@ FIFTEEN_MINUTES = 900
 #   depth++
 
 
-def create_headers():
+def create_headers() -> dict:
     if config.BEARER_TOKEN is None:
         raise MisconfiguredException("BEARER_TOKEN environment variable not set.")
     return {"Authorization": f"Bearer {config.BEARER_TOKEN}"}
 
 
 class BirbGraph:
-    def __init__(self, edge_type):
+    def __init__(self, edge_type: EdgeType) -> None:
         self.edge_type = edge_type
 
-    def set_user(self, user_id):
+    def set_user(self, user_id: str) -> None:
         self.user_id = user_id
 
     @property
-    def follow_url(self):
+    def follow_url(self) -> str:
         return f"https://api.twitter.com/2/users/{self.user_id}/{self.edge_type}"
 
     @property
-    def output_path(self):
+    def output_path(self) -> Path:
         return config.DATA_PATH / self.edge_type / f"{self.user_id}.jsonl"
 
-    def write_users(self, users):
+    def write_users(self, users: list[str]) -> None:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         with jsonlines.open(self.output_path, "w") as writer:
             writer.write_all(users)
 
-    def get_users(self, stop_at=None):
+    def get_users(self, stop_at: int | None = None) -> list[str]:
         users = []
         pagination_token = None
         max_results = config.MAX_RESULTS if stop_at is None else stop_at
@@ -65,7 +72,9 @@ class BirbGraph:
 
     # @sleep_and_retry
     # @limits(calls=15, period=FIFTEEN_MINUTES)
-    def get_follows_request(self, pagination_token=None, max_results=None):
+    def get_follows_request(
+        self, pagination_token: str | None = None, max_results: str | None = None
+    ) -> dict:
         user_fields = [
             "created_at",
             "description",
