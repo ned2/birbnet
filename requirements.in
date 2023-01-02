@@ -1,5 +1,5 @@
 jsonlines
+pydantic
 ratelimit
 requests
 typer
-ratelimit

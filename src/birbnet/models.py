@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from datetime import datetime
+import json
+from typing import Self
 
 
 @dataclass
@@ -21,27 +23,42 @@ class User:
     profile_image_url: str
 
     @classmethod
-    def from_json(cls, json: dict) -> Self:
-        # TODO
-        # union of entities.url.urls.expanded_url + entities.description.urls.expanded_url
-        urls = []
-        # union of entities.description.mentions
-        mentions = []
+    def from_json(cls, json_str: dict) -> Self:
+        data = json.loads(json_str)
+        urls = list(
+            {
+                url.get("expanded_url", url["url"])
+                for url in data.get("entities", {}).get("url", {}).get("urls", [])
+            }
+            | {
+                url.get("expanded_url", url["url"])
+                for url in data.get("entities", {})
+                .get("description", {})
+                .get("urls", [])
+            }
+        )
+        mentions = list(
+            {
+                mention["username"]
+                for mention in data.get("entities", {})
+                .get("description", {})
+                .get("mentions", [])
+            }
+        )
         return cls(
-            id=json["id"],
-            description=json["description"],
-            # TODO parse this
-            created_at=json["created_at"],
-            name=json["name"],
-            location=json["location"],
-            username=json.get("username"),
-            verified=json["verified"],
-            protected=json["protected"],
-            followers_count=json["public_metrics"]["followers_count"],
-            following_count=json["public_metrics"]["following_count"],
-            tweet_count=json["public_metrics"]["tweet_count"],
-            listed_count=json["public_metrics"]["listed_count"],
+            id=data["id"],
+            description=data["description"],
+            created_at=data["created_at"],
+            name=data["name"],
+            location=data.get("location"),
+            username=data["username"],
+            verified=data["verified"],
+            protected=data["protected"],
+            followers_count=data["public_metrics"]["followers_count"],
+            following_count=data["public_metrics"]["following_count"],
+            tweet_count=data["public_metrics"]["tweet_count"],
+            listed_count=data["public_metrics"]["listed_count"],
             urls=urls,
             mentions=mentions,
-            profile_image_url=json["profile_image_url"],
+            profile_image_url=data["profile_image_url"],
         )
