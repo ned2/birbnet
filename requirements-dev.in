@@ -1,3 +1,7 @@
 black
-ptpython
+ipdb
 ipython
+isort
+jupyterlab
+jupyterlab-code-formatter
+ptpython

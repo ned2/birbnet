@@ -1,4 +1,5 @@
 jsonlines
-tatelimit
+ratelimit
 requests
 typer
+ratelimit
