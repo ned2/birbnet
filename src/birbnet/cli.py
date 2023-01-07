@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from . import config
-from .birb import BirbCrawler
+from .crawler import BirbCrawler
 
 app = typer.Typer()
 
