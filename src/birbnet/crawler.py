@@ -2,20 +2,24 @@ import json
 import logging
 import os
 from datetime import datetime
-from functools import partial
+from functools import cache
 from pathlib import Path
 from typing import Literal
 
 import jsonlines
 import requests
-from ratelimit import limits, sleep_and_retry
+from pyrate_limiter import Duration, Limiter, RequestRate
 
 from . import config
 from .exceptions import MisconfiguredException
 
-logger = logging.getLogger(__package__)
 EDGE_TYPES = ["following", "followers"]
+MAX_RESULTS = 1000
 Edge = Literal[*EDGE_TYPES]
+
+logger = logging.getLogger(__package__)
+limiter = Limiter(RequestRate(15, 15 * Duration.MINUTE))
+api_requests = 0
 
 
 class BirbCrawler:
@@ -37,6 +41,7 @@ class BirbCrawler:
         self.seed_user_id = seed_user_id or config.SEED_USER_ID
         self.depth = depth
         self.crawled_count = 0
+        self.request_count = 0
 
         if not self.seed_user_id:
             raise MisconfiguredException(
@@ -52,8 +57,9 @@ class BirbCrawler:
         date = datetime.now().strftime("%Y%m%d")
         return f"{self.seed_user_id}_{date}"
 
-    # TODO: add logging
-    # TODO: add cache?
+    # TODO: add cache
+    # UserFetcher.get_users needs to be cached independently of the UserFetcher
+    # instance (otherwise cache)
     def crawl(self, user_ids=None, current_depth=0) -> None:
         """Perform a crawl of specified users, or start with seed user."""
         if current_depth == self.depth:
@@ -63,13 +69,24 @@ class BirbCrawler:
         new_depth = current_depth + 1
         logger.info("Crawler at depth %d", new_depth)
         for user_id in user_ids:
-            user_fetcher = UserFetcher(user_id, self.edge, run_id=self.run_id)
-            new_users = user_fetcher.get_users()
-            logger.info("Retrieved %d users for user %s", len(new_users), user_id)
-            user_fetcher.write_users(new_users)
+            new_users = get_users(user_id, self.edge, run_id=self.run_id)
+            logger.info(
+                "Depth %d: retrieved %d users for user %s",
+                new_depth,
+                len(new_users),
+                user_id,
+            )
             self.crawled_count += len(new_users)
             new_user_ids = [user["id"] for user in new_users]
             self.crawl(user_ids=new_user_ids, current_depth=new_depth)
+
+
+@cache
+def get_users(user_id, edge, run_id=None):
+    user_fetcher = UserFetcher(user_id, edge, run_id=run_id)
+    users = user_fetcher.get_users()
+    user_fetcher.write_users(users)
+    return users
 
 
 class UserFetcher:
@@ -96,9 +113,11 @@ class UserFetcher:
             return self.output_dir_path / self.run_id / file_name
         return self.output_dir_path / file_name
 
+    @limiter.ratelimit("follow-lookup", delay=True)
     def get_follows_request(
-        self, pagination_token: str | None = None, max_results: str | None = None
+        self, pagination_token: str | None = None, max_results: int = MAX_RESULTS
     ) -> dict:
+        global api_requests
         user_fields = [
             "created_at",
             "description",
@@ -123,13 +142,17 @@ class UserFetcher:
         response = requests.get(
             self.request_url, headers=create_headers(), params=params
         )
+        api_requests += 1
+        logger.info("Requests made: %d", api_requests)
         response.raise_for_status()
         return response.json()
 
-    def get_users(self, stop_at: int | None = None) -> dict:
+    def get_users(
+        self, stop_at: int | None = None, max_results: int = MAX_RESULTS
+    ) -> dict:
         users = []
         pagination_token = None
-        max_results = config.MAX_RESULTS if stop_at is None else stop_at
+        max_results = max_results if stop_at is None else min(max_results, stop_at)
         while True:
             response = self.get_follows_request(
                 pagination_token=pagination_token, max_results=max_results
