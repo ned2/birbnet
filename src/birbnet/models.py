@@ -1,7 +1,9 @@
-from pydantic.dataclasses import dataclass
-from datetime import datetime
 import json
+from datetime import datetime
+from enum import Enum
 from typing import Self
+
+from pydantic.dataclasses import dataclass
 
 
 @dataclass

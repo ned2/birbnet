@@ -1,11 +1,9 @@
 from pathlib import Path
-from typing import Optional
 
 import typer
 
-from . import birb
 from . import config
-
+from .birb import BirbCrawler
 
 app = typer.Typer()
 
@@ -23,15 +21,15 @@ def get_followers(
         callback=user_id_callback,
         help="The Twitter ID of the user to query",
     ),
-    stop_at: int = typer.Option(None, help="Maximum number of results to be returned")
+    stop_at: int = typer.Option(None, help="Maximum number of results to be returned"),
 ):
-    graph = birb.BirbGraph(edge_type="followers")
+    crawler = BirbCrawler(edge_type="followers")
     graph.set_user(user_id)
     users = graph.get_users(stop_at=stop_at)
     graph.write_users(users)
     typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
 
-    
+
 @app.command()
 def get_following(
     user_id: Optional[str] = typer.Argument(
@@ -39,9 +37,27 @@ def get_following(
         callback=user_id_callback,
         help="The Twitter ID of the user to get followers of",
     ),
-    stop_at: int = typer.Option(None, help="Maximum number of results to be returned")
+    stop_at: int = typer.Option(None, help="Maximum number of results to be returned"),
 ):
-    graph = birb.BirbGraph(edge_type="following")
+    crawler = BirbCrawler(edge_type="following")
+    graph.set_user(user_id)
+    users = graph.get_users(stop_at=stop_at)
+    graph.write_users(users)
+    typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
+
+
+@app.command()
+def get_users(
+    user_id: str
+    | None = typer.Argument(
+        config.SEED_USER_ID,
+        callback=user_id_callback,
+        help="The Twitter ID of the seed user.",
+    ),
+    stop_at: int
+    | None = typer.Option(None, help="Maximum number of results to be returned"),
+):
+    crawler = BirbCrawler(edge_type="following")
     graph.set_user(user_id)
     users = graph.get_users(stop_at=stop_at)
     graph.write_users(users)
