@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from functools import partial
@@ -12,6 +13,7 @@ from ratelimit import limits, sleep_and_retry
 from . import config
 from .exceptions import MisconfiguredException
 
+logger = logging.getLogger(__package__)
 EDGE_TYPES = ["following", "followers"]
 Edge = Literal[*EDGE_TYPES]
 
@@ -52,19 +54,22 @@ class BirbCrawler:
 
     # TODO: add logging
     # TODO: add cache?
-    def crawl(self, users=None, current_depth=0) -> None:
+    def crawl(self, user_ids=None, current_depth=0) -> None:
         """Perform a crawl of specified users, or start with seed user."""
         if current_depth == self.depth:
             return
-        if users is None:
-            users = [self.seed_user_id]
+        if user_ids is None:
+            user_ids = [self.seed_user_id]
         new_depth = current_depth + 1
-        for user in users:
-            user_fetcher = UserFetcher(user, self.edge, run_id=self.run_id)
+        logger.info("Crawler at depth %d", new_depth)
+        for user_id in user_ids:
+            user_fetcher = UserFetcher(user_id, self.edge, run_id=self.run_id)
             new_users = user_fetcher.get_users()
+            logger.info("Retrieved %d users for user %s", len(new_users), user_id)
             user_fetcher.write_users(new_users)
             self.crawled_count += len(new_users)
-            self.crawl(users=new_users, current_depth=new_depth)
+            new_user_ids = [user["id"] for user in new_users]
+            self.crawl(user_ids=new_user_ids, current_depth=new_depth)
 
 
 class UserFetcher:
