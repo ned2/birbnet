@@ -1,64 +1,72 @@
+from inspect import cleandoc
 from pathlib import Path
+from typing import Optional
 
 import typer
 
-from . import config
-from .crawler import BirbCrawler
+from . import config, validate
+from .config import DEFAULTS
+from .crawler import BirbCrawler, Edge
+from .types import Edge
 
 app = typer.Typer()
 
 
 def user_id_callback(value: str):
-    if not value.isdigit():
-        raise typer.BadParameter("User ID must be be a string of integers.")
+    try:
+        validate.validate_user_id(value)
+    except MisconfiguredException as error:
+        raise typer.BadParameter(error.msg)
+    return value
+
+
+def edge_callback(value: str):
+    try:
+        validate.validate_edge(value)
+    except MisconfiguredException as error:
+        raise typer.BadParameter(error.msg)
     return value
 
 
 @app.command()
-def get_followers(
-    user_id: Optional[str] = typer.Argument(
-        config.SEED_USER_ID,
-        callback=user_id_callback,
-        help="The Twitter ID of the user to query",
-    ),
-    stop_at: int = typer.Option(None, help="Maximum number of results to be returned"),
-):
-    crawler = BirbCrawler(edge_type="followers")
-    graph.set_user(user_id)
-    users = graph.get_users(stop_at=stop_at)
-    graph.write_users(users)
-    typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
-
-
-@app.command()
-def get_following(
-    user_id: Optional[str] = typer.Argument(
-        config.SEED_USER_ID,
-        callback=user_id_callback,
-        help="The Twitter ID of the user to get followers of",
-    ),
-    stop_at: int = typer.Option(None, help="Maximum number of results to be returned"),
-):
-    crawler = BirbCrawler(edge_type="following")
-    graph.set_user(user_id)
-    users = graph.get_users(stop_at=stop_at)
-    graph.write_users(users)
-    typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
-
-
-@app.command()
 def get_users(
-    user_id: str
-    | None = typer.Argument(
+    user_id: Optional[str] = typer.Option(
         config.SEED_USER_ID,
         callback=user_id_callback,
         help="The Twitter ID of the seed user.",
     ),
-    stop_at: int
-    | None = typer.Option(None, help="Maximum number of results to be returned"),
+    depth: Optional[int] = typer.Option(
+        DEFAULTS.crawler_depth, help="Edge depth to crawl to."
+    ),
+    edge: str = typer.Option(
+        "following",
+        help="The direction of user relationships to crawl.",
+        callback=edge_callback,
+    ),
 ):
-    crawler = BirbCrawler(edge_type="following")
-    graph.set_user(user_id)
-    users = graph.get_users(stop_at=stop_at)
-    graph.write_users(users)
-    typer.echo(f"Retrieved and wrote {len(users)} to {graph.output_path}.")
+    typer.echo(
+        cleandoc(
+            f"""
+            Running crawler with following settings:
+            seed_user_id: {user_id}
+            depth:        {depth}
+            edge:         {edge}
+            """
+        )
+    )
+    crawler = BirbCrawler(seed_user_id=user_id, edge=edge, depth=depth)
+    crawler.crawl()
+    # TODO: write out other stats such as output location
+    typer.echo(f"Retrieved and wrote {crawler.crawled_count}.")
+
+
+@app.command()
+def get_config():
+    settings = [val for val in config.__dict__ if val.isupper()]
+    padding_len = max(len(val) for val in settings) + 4
+    results = []
+    for setting in settings:
+        value = getattr(config, setting)
+        item = f"{setting:{padding_len}}{str(value)}"
+        results.append(item)
+    typer.echo("\n".join(results))

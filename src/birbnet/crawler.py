@@ -4,18 +4,14 @@ import os
 from datetime import datetime
 from functools import cache
 from pathlib import Path
-from typing import Literal
 
 import jsonlines
 import requests
 from pyrate_limiter import Duration, Limiter, RequestRate
 
-from . import config
-from .exceptions import MisconfiguredException
-
-EDGE_TYPES = ["following", "followers"]
-MAX_RESULTS = 1000
-Edge = Literal[*EDGE_TYPES]
+from . import config, validate
+from .config import DEFAULTS
+from .types import Edge
 
 logger = logging.getLogger(__package__)
 limiter = Limiter(RequestRate(15, 15 * Duration.MINUTE))
@@ -26,7 +22,10 @@ class BirbCrawler:
     """Class for crawling followers or following users given an initial user."""
 
     def __init__(
-        self, edge: Edge, seed_user_id: str | None = None, depth: int = 3
+        self,
+        edge: Edge,
+        seed_user_id: str | None = None,
+        depth: int = DEFAULTS.crawler_depth,
     ) -> None:
         """Initialise a BirbCrawler instance.
 
@@ -43,13 +42,8 @@ class BirbCrawler:
         self.crawled_count = 0
         self.request_count = 0
 
-        if not self.seed_user_id:
-            raise MisconfiguredException(
-                "BIRBNET_SEED_USER_ID environment variable must be set if "
-                "`seed_user_id` is `None`"
-            )
-        if not edge in EDGE_TYPES:
-            raise MisconfiguredException(f"`edge` must be one of: {EDGE_TYPES}")
+        validate.validate_user_id(self.seed_user_id)
+        validate.validate_edge(self.edge)
 
     @property
     def run_id(self) -> str:
@@ -115,7 +109,9 @@ class UserFetcher:
 
     @limiter.ratelimit("follow-lookup", delay=True)
     def get_follows_request(
-        self, pagination_token: str | None = None, max_results: int = MAX_RESULTS
+        self,
+        pagination_token: str | None = None,
+        max_results: int = DEFAULTS.crawler_max_results,
     ) -> dict:
         global api_requests
         user_fields = [
@@ -147,8 +143,11 @@ class UserFetcher:
         response.raise_for_status()
         return response.json()
 
+    # TODO: need to have ability to load from disk if output path exists
     def get_users(
-        self, stop_at: int | None = None, max_results: int = MAX_RESULTS
+        self,
+        stop_at: int | None = None,
+        max_results: int = DEFAULTS.crawler_max_results,
     ) -> dict:
         users = []
         pagination_token = None
@@ -169,6 +168,12 @@ class UserFetcher:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         with jsonlines.open(self.output_path, "w") as writer:
             writer.write_all(users)
+
+    # TODO: check this works
+    def read_users(self, path: os.PathLike | str) -> dict:
+        with jsonlines.open(self.output_path, "r") as reader:
+            users = [user for user in reader]
+        return users
 
 
 def create_headers() -> dict:
