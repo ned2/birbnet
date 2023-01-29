@@ -1,3 +1,4 @@
+import logging
 from inspect import cleandoc
 from typing import Optional
 
@@ -8,6 +9,7 @@ from .config import DEFAULTS
 from .crawler import BirbCrawler
 from .exceptions import MisconfiguredException
 
+logger = logging.getLogger(__package__)
 app = typer.Typer()
 
 
@@ -32,17 +34,23 @@ def get_users(
     user_id: Optional[str] = typer.Option(
         config.SEED_USER_ID,
         callback=user_id_callback,
-        help="The Twitter ID of the seed user.",
-    ),
-    depth: Optional[int] = typer.Option(
-        DEFAULTS.crawler_depth, help="Edge depth to crawl to."
+        help="The Twitter ID of the seed user to start the crawl at.",
     ),
     edge: str = typer.Option(
         "following",
         help="The direction of user relationships to crawl.",
         callback=edge_callback,
     ),
+    depth: Optional[int] = typer.Option(
+        DEFAULTS.crawler_depth,
+        help="Crawl depth to stop at in the connected user graph.",
+    ),
+    run_id: Optional[str] = typer.Option(
+        None,
+        help="ID used to track this run for saving output and resuming",
+    ),
 ):
+    logger.setLevel(logging.INFO)
     typer.echo(
         cleandoc(
             f"""
@@ -53,10 +61,10 @@ def get_users(
             """
         )
     )
-    crawler = BirbCrawler(seed_user_id=user_id, edge=edge, depth=depth)
+    crawler = BirbCrawler(user_id=user_id, edge=edge, depth=depth, run_id=run_id)
     crawler.crawl()
     # TODO: write out other stats such as output location
-    typer.echo(f"Retrieved and wrote {crawler.crawled_count}.")
+    typer.echo(f"Retrieved {crawler.crawled_count} users from Twitter.")
 
 
 @app.command()

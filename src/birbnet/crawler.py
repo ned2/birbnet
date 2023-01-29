@@ -24,42 +24,41 @@ class BirbCrawler:
     def __init__(
         self,
         edge: Edge,
-        seed_user_id: str | None = None,
+        user_id: str | None = None,
+        run_id: str | None = None,
         depth: int = DEFAULTS.crawler_depth,
     ) -> None:
         """Initialise a BirbCrawler instance.
 
         Arguments:
-        edge -- specifies crawl direction: "following" or "followers"
+        edge       -- Specifies crawl direction: "following" or "followers".
 
         Keyword Arguments:
-        seed_user_id -- user to start crawl at. if None uses BIRBNET_SEED_USER_ID.
-        depth        -- crawl depth to stop at in the connected user graph
+        user_id    -- User to start crawl at. if None uses BIRBNET_SEED_USER_ID.
+        run_id     -- ID used to track this run for saving output and resuming.
+        depth      -- Crawl depth to stop at in the connected user graph.
         """
         self.edge = edge
-        self.seed_user_id = seed_user_id or config.SEED_USER_ID
+        self.user_id = user_id or config.SEED_USER_ID
+        self.run_id = run_id
         self.depth = depth
         self.crawled_count = 0
         self.request_count = 0
 
-        validate.validate_user_id(self.seed_user_id)
+        if self.run_id is None:
+            date = datetime.now().strftime("%Y%m%d")
+            self.run_id = f"{self.user_id}_{date}"
+        validate.validate_user_id(self.user_id)
         validate.validate_edge(self.edge)
 
-    @property
-    def run_id(self) -> str:
-        """String identifier for a run of the crawler."""
-        date = datetime.now().strftime("%Y%m%d")
-        return f"{self.seed_user_id}_{date}"
-
-    # TODO: add cache
-    # UserFetcher.get_users needs to be cached independently of the UserFetcher
-    # instance (otherwise cache)
-    def crawl(self, user_ids=None, current_depth=0) -> None:
+    def crawl(self, user_ids: list[str] | None = None, current_depth: int = 0) -> None:
         """Perform a crawl of specified users, or start with seed user."""
         if current_depth == self.depth:
             return
+        if current_depth == 0:
+            logger.info("Starting crawl with run ID: %s", self.run_id)
         if user_ids is None:
-            user_ids = [self.seed_user_id]
+            user_ids = [self.user_id]
         new_depth = current_depth + 1
         logger.info("Crawler at depth %d", new_depth)
         for user_id in user_ids:
@@ -76,9 +75,9 @@ class BirbCrawler:
 
 
 @cache
-def get_users(user_id, edge, run_id=None):
+def get_users(user_id: str, edge: Edge, run_id: str | None = None):
     user_fetcher = UserFetcher(user_id, edge, run_id=run_id)
-    users = user_fetcher.get_users()
+    users = user_fetcher.fetch_users()
     user_fetcher.write_users(users)
     return users
 
@@ -106,6 +105,34 @@ class UserFetcher:
         if self.run_id:
             return self.output_dir_path / self.run_id / file_name
         return self.output_dir_path / file_name
+
+    def fetch_users(
+        self,
+        resume: bool = True,
+        stop_at: int | None = None,
+        max_results: int = DEFAULTS.crawler_max_results,
+    ) -> dict:
+        if self.output_path.exists() and resume:
+            return self.read_users()
+
+        users = []
+        pagination_token = None
+        max_results = max_results if stop_at is None else min(max_results, stop_at)
+        logger.info("Fetching %s for user %s", self.edge, self.user_id)
+        while True:
+            response = self.get_follows_request(
+                pagination_token=pagination_token, max_results=max_results
+            )
+            if "data" not in response:
+                logger.info("Failed to retrieve user %s.", self.user_id)
+                break
+            users.extend(response["data"])
+            pagination_token = response["meta"].get("next_token")
+            if pagination_token is None:
+                break
+            if stop_at is not None and len(users) >= stop_at:
+                break
+        return users
 
     @limiter.ratelimit("follow-lookup", delay=True)
     def get_follows_request(
@@ -143,34 +170,16 @@ class UserFetcher:
         response.raise_for_status()
         return response.json()
 
-    # TODO: need to have ability to load from disk if output path exists
-    def get_users(
-        self,
-        stop_at: int | None = None,
-        max_results: int = DEFAULTS.crawler_max_results,
-    ) -> dict:
-        users = []
-        pagination_token = None
-        max_results = max_results if stop_at is None else min(max_results, stop_at)
-        while True:
-            response = self.get_follows_request(
-                pagination_token=pagination_token, max_results=max_results
-            )
-            users.extend(response["data"])
-            pagination_token = response["meta"].get("next_token")
-            if pagination_token is None:
-                break
-            if stop_at is not None and len(users) >= stop_at:
-                break
-        return users
-
-    def write_users(self, users: dict) -> None:
+    def write_users(self, users: dict, force: bool = False) -> None:
+        if self.output_path.exists() and not force:
+            logger.info("Skipping already retrieved data: %s", self.output_path.name)
+            return
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         with jsonlines.open(self.output_path, "w") as writer:
             writer.write_all(users)
 
     # TODO: check this works
-    def read_users(self, path: os.PathLike | str) -> dict:
+    def read_users(self) -> dict:
         with jsonlines.open(self.output_path, "r") as reader:
             users = [user for user in reader]
         return users
