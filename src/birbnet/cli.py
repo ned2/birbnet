@@ -1,13 +1,12 @@
 from inspect import cleandoc
-from pathlib import Path
 from typing import Optional
 
 import typer
 
 from . import config, validate
 from .config import DEFAULTS
-from .crawler import BirbCrawler, Edge
-from .types import Edge
+from .crawler import BirbCrawler
+from .exceptions import MisconfiguredException
 
 app = typer.Typer()
 

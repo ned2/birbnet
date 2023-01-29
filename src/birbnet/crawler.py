@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from datetime import datetime
@@ -11,6 +10,7 @@ from pyrate_limiter import Duration, Limiter, RequestRate
 
 from . import config, validate
 from .config import DEFAULTS
+from .exceptions import MisconfiguredException
 from .types import Edge
 
 logger = logging.getLogger(__package__)
