@@ -2,4 +2,5 @@ jsonlines
 pydantic
 ratelimit
 requests
+rich
 typer
