@@ -14,7 +14,9 @@ from .exceptions import MisconfiguredException
 from .types import Edge
 
 logger = logging.getLogger(__package__)
-limiter = Limiter(RequestRate(15, 15 * Duration.MINUTE))
+
+# 15 requests every 15 minutes plus some padding to add tolerance
+limiter = Limiter(RequestRate(15, 15 * Duration.MINUTE + 10))
 api_requests = 0
 
 
