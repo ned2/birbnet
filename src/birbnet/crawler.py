@@ -7,6 +7,7 @@ from pathlib import Path
 import jsonlines
 import requests
 from pyrate_limiter import Duration, Limiter, RequestRate
+from requests.adapters import HTTPAdapter, Retry
 
 from . import config, validate
 from .config import DEFAULTS
@@ -63,13 +64,15 @@ class BirbCrawler:
             user_ids = [self.user_id]
         new_depth = current_depth + 1
         logger.info("Crawler at depth %d", new_depth)
-        for user_id in user_ids:
+        for i, user_id in enumerate(user_ids):
             new_users = get_users(user_id, self.edge, run_id=self.run_id)
             logger.info(
-                "Depth %d: retrieved %d users for user %s",
+                "Depth %d: retrieved %d users for user %s (%d/%d)",
                 new_depth,
                 len(new_users),
                 user_id,
+                i + 1,
+                len(user_ids),
             )
             self.crawled_count += len(new_users)
             new_user_ids = [user["id"] for user in new_users]
@@ -96,6 +99,15 @@ class UserFetcher:
         self.edge = edge
         self.run_id = run_id
         self.output_dir_path = output_dir_path or config.DATA_PATH
+        self.session = self._make_session()
+
+    def _make_session(self):
+        retries = Retry(
+            total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]
+        )
+        session = requests.Session()
+        session.mount("http://", HTTPAdapter(max_retries=retries))
+        return session
 
     @property
     def request_url(self) -> str:
@@ -164,7 +176,7 @@ class UserFetcher:
             "pagination_token": pagination_token,
             "user.fields": ",".join(user_fields),
         }
-        response = requests.get(
+        response = self.session.get(
             self.request_url, headers=create_headers(), params=params
         )
         api_requests += 1
@@ -187,6 +199,7 @@ class UserFetcher:
         return users
 
 
+# TODO add this to the requests session
 def create_headers() -> dict:
     if config.BEARER_TOKEN is None:
         raise MisconfiguredException("BEARER_TOKEN environment variable not set.")
