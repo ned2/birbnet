@@ -65,26 +65,25 @@ class BirbCrawler:
         new_depth = current_depth + 1
         logger.info("Crawler at depth %d", new_depth)
         for i, user_id in enumerate(user_ids):
-            new_users = get_users(user_id, self.edge, run_id=self.run_id)
+            new_user_ids = get_user_ids(user_id, self.edge, run_id=self.run_id)
             logger.info(
                 "Depth %d: retrieved %d users for user %s (%d/%d)",
                 new_depth,
-                len(new_users),
+                len(new_user_ids),
                 user_id,
                 i + 1,
                 len(user_ids),
             )
-            self.crawled_count += len(new_users)
-            new_user_ids = [user["id"] for user in new_users]
+            self.crawled_count += len(new_user_ids)
             self.crawl(user_ids=new_user_ids, current_depth=new_depth)
 
 
 @cache
-def get_users(user_id: str, edge: Edge, run_id: str | None = None):
+def get_user_ids(user_id: str, edge: Edge, run_id: str | None = None):
     user_fetcher = UserFetcher(user_id, edge, run_id=run_id)
     users = user_fetcher.fetch_users()
     user_fetcher.write_users(users)
-    return users
+    return [user["id"] for user in users]
 
 
 class UserFetcher:
@@ -192,7 +191,6 @@ class UserFetcher:
         with jsonlines.open(self.output_path, "w") as writer:
             writer.write_all(users)
 
-    # TODO: check this works
     def read_users(self) -> dict:
         with jsonlines.open(self.output_path, "r") as reader:
             users = [user for user in reader]
