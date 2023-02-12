@@ -1,6 +1,5 @@
 import logging
 from inspect import cleandoc
-from itertools import islice
 from pathlib import Path
 from statistics import mean, median
 from typing import Optional
@@ -8,6 +7,7 @@ from typing import Optional
 import jsonlines
 import orjson
 import typer
+from rich.progress import track
 
 from . import config, validate
 from .config import DEFAULTS
@@ -88,7 +88,8 @@ def crawl_stats(
 ):
     all_user_ids = set()
     edge_counts = []
-    for user_file in islice(path.glob("*.json"), limit):
+    crawled_paths = list(path.glob("*.json"))[:limit]
+    for user_file in track(crawled_paths, description="blah"):
         with jsonlines.open(user_file, "r", loads=orjson.loads) as reader:
             user_ids = [user["id"] for user in reader]
         edge_counts.append(len(user_ids))
