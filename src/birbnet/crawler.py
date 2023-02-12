@@ -5,6 +5,7 @@ from functools import cache
 from pathlib import Path
 
 import jsonlines
+import orjson
 import requests
 from pyrate_limiter import Duration, Limiter, RequestRate
 from requests.adapters import HTTPAdapter, Retry
@@ -192,7 +193,7 @@ class UserFetcher:
             writer.write_all(users)
 
     def read_users(self) -> dict:
-        with jsonlines.open(self.output_path, "r") as reader:
+        with jsonlines.open(self.output_path, "r", loads=orjson.loads) as reader:
             users = [user for user in reader]
         return users
 

@@ -1,7 +1,12 @@
 import logging
 from inspect import cleandoc
+from itertools import islice
+from pathlib import Path
+from statistics import mean, median
 from typing import Optional
 
+import jsonlines
+import orjson
 import typer
 
 from . import config, validate
@@ -65,6 +70,34 @@ def get_users(
     crawler.crawl()
     # TODO: write out other stats such as output location
     typer.echo(f"Retrieved {crawler.crawled_count} users from Twitter.")
+
+
+@app.command()
+def crawl_stats(
+    path: Path = typer.Argument(
+        ...,
+        file_okay=False,
+        exists=True,
+        readable=True,
+        help="Path to crawler run output for deriving stats for.",
+    ),
+    limit: Optional[int] = typer.Option(
+        None,
+        help="Number of retrieved users to limit stats to be calculated for.",
+    ),
+):
+    all_user_ids = set()
+    edge_counts = []
+    for user_file in islice(path.glob("*.json"), limit):
+        with jsonlines.open(user_file, "r", loads=orjson.loads) as reader:
+            user_ids = [user["id"] for user in reader]
+        edge_counts.append(len(user_ids))
+        all_user_ids.update(user_ids)
+    typer.echo(f"Users crawled: {len(edge_counts):>10}")
+    typer.echo(f"Nodes:         {len(all_user_ids):>10}")
+    typer.echo(f"Edges:         {sum(edge_counts):>10}")
+    typer.echo(f"Mean edges:    {mean(edge_counts):>10.0f}")
+    typer.echo(f"Median edges:  {median(edge_counts):>10.0f}")
 
 
 @app.command()
