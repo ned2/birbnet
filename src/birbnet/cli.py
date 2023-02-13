@@ -1,3 +1,4 @@
+import locale
 import logging
 from inspect import cleandoc
 from pathlib import Path
@@ -15,6 +16,8 @@ from .config import DEFAULTS
 from .crawler import BirbCrawler
 from .exceptions import MisconfiguredException
 
+
+locale.setlocale(locale.LC_ALL, "")
 logger = logging.getLogger(__package__)
 app = typer.Typer()
 
@@ -97,11 +100,11 @@ def crawl_stats(
         edge_counts.append(len(user_ids))
         all_user_ids.update(user_ids)
         size += user_file.stat().st_size
-    typer.echo(f"Users crawled: {len(edge_counts):>10}")
-    typer.echo(f"Nodes:         {len(all_user_ids):>10}")
-    typer.echo(f"Edges:         {sum(edge_counts):>10}")
-    typer.echo(f"Mean edges:    {mean(edge_counts):>10.0f}")
-    typer.echo(f"Median edges:  {median(edge_counts):>10.0f}")
+    typer.echo(f"Users crawled: {len(edge_counts):>10n}")
+    typer.echo(f"Nodes:         {len(all_user_ids):>10n}")
+    typer.echo(f"Edges:         {sum(edge_counts):>10n}")
+    typer.echo(f"Mean edges:    {round(mean(edge_counts)):>10n}")
+    typer.echo(f"Median edges:  {median(edge_counts):>10n}")
     typer.echo(f"Size on disk:  {naturalsize(size):>10}")
 
 
