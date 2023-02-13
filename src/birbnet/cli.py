@@ -7,6 +7,7 @@ from typing import Optional
 import jsonlines
 import orjson
 import typer
+from humanize import naturalsize
 from rich.progress import track
 
 from . import config, validate
@@ -89,16 +90,19 @@ def crawl_stats(
     all_user_ids = set()
     edge_counts = []
     crawled_paths = list(path.glob("*.json"))[:limit]
-    for user_file in track(crawled_paths, description="blah"):
+    size = 0
+    for user_file in track(crawled_paths):
         with jsonlines.open(user_file, "r", loads=orjson.loads) as reader:
             user_ids = [user["id"] for user in reader]
         edge_counts.append(len(user_ids))
         all_user_ids.update(user_ids)
+        size += user_file.stat().st_size
     typer.echo(f"Users crawled: {len(edge_counts):>10}")
     typer.echo(f"Nodes:         {len(all_user_ids):>10}")
     typer.echo(f"Edges:         {sum(edge_counts):>10}")
     typer.echo(f"Mean edges:    {mean(edge_counts):>10.0f}")
     typer.echo(f"Median edges:  {median(edge_counts):>10.0f}")
+    typer.echo(f"Size on disk:  {naturalsize(size):>10}")
 
 
 @app.command()

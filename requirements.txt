@@ -12,6 +12,8 @@ charset-normalizer==3.0.1
     # via requests
 click==8.1.3
     # via typer
+humanize==4.6.0
+    # via -r requirements.in
 idna==3.4
     # via requests
 jsonlines==3.1.0
