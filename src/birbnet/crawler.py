@@ -10,9 +10,9 @@ import requests
 from pyrate_limiter import Duration, Limiter, RequestRate
 from requests.adapters import HTTPAdapter, Retry
 
-from . import config, validate
+from . import config, http_utils, validate
 from .config import DEFAULTS
-from .exceptions import MisconfiguredException
+from .models import USER_FIELDS
 from .types import Edge
 
 logger = logging.getLogger(__package__)
@@ -155,32 +155,19 @@ class UserFetcher:
         max_results: int = DEFAULTS.crawler_max_results,
     ) -> dict:
         global api_requests
-        user_fields = [
-            "created_at",
-            "description",
-            "entities",
-            "id",
-            "location",
-            "name",
-            "pinned_tweet_id",
-            "profile_image_url",
-            "protected",
-            "public_metrics",
-            "url",
-            "username",
-            "verified",
-            "withheld",
-        ]
-        params = {
-            "max_results": max_results,
-            "pagination_token": pagination_token,
-            "user.fields": ",".join(user_fields),
-        }
         response = self.session.get(
-            self.request_url, headers=create_headers(), params=params
+            self.request_url,
+            headers=http_utils.create_headers(),
+            params=http_utils.prepare_params(
+                {
+                    "max_results": max_results,
+                    "pagination_token": pagination_token,
+                    "user.fields": USER_FIELDS,
+                }
+            ),
         )
         api_requests += 1
-        logger.info("Requests made: %d", api_requests)
+        logger.info("Request number: %d", api_requests)
         response.raise_for_status()
         return response.json()
 
@@ -199,7 +186,3 @@ class UserFetcher:
 
 
 # TODO add this to the requests session
-def create_headers() -> dict:
-    if config.BEARER_TOKEN is None:
-        raise MisconfiguredException("BEARER_TOKEN environment variable not set.")
-    return {"Authorization": f"Bearer {config.BEARER_TOKEN}"}

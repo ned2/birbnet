@@ -7,14 +7,17 @@ from typing import Optional
 
 import jsonlines
 import orjson
+import requests
 import typer
 from humanize import naturalsize
+from rich import print, print_json
 from rich.progress import track
 
-from . import config, validate
+from . import config, http_utils, validate
 from .config import DEFAULTS
 from .crawler import BirbCrawler
 from .exceptions import MisconfiguredException
+from .models import USER_FIELDS, User
 
 
 locale.setlocale(locale.LC_ALL, "")
@@ -60,7 +63,7 @@ def get_users(
     ),
 ):
     logger.setLevel(logging.INFO)
-    typer.echo(
+    print(
         cleandoc(
             f"""
             Running crawler with following settings:
@@ -73,7 +76,7 @@ def get_users(
     crawler = BirbCrawler(user_id=user_id, edge=edge, depth=depth, run_id=run_id)
     crawler.crawl()
     # TODO: write out other stats such as output location
-    typer.echo(f"Retrieved {crawler.crawled_count} users from Twitter.")
+    print(f"Retrieved {crawler.crawled_count} users from Twitter.")
 
 
 @app.command()
@@ -100,12 +103,12 @@ def crawl_stats(
         edge_counts.append(len(user_ids))
         all_user_ids.update(user_ids)
         size += user_file.stat().st_size
-    typer.echo(f"Users crawled: {len(edge_counts):>10n}")
-    typer.echo(f"Nodes:         {len(all_user_ids):>10n}")
-    typer.echo(f"Edges:         {sum(edge_counts):>10n}")
-    typer.echo(f"Mean edges:    {round(mean(edge_counts)):>10n}")
-    typer.echo(f"Median edges:  {median(edge_counts):>10n}")
-    typer.echo(f"Size on disk:  {naturalsize(size):>10}")
+    print(f"Users crawled: {len(edge_counts):>10n}")
+    print(f"Nodes:         {len(all_user_ids):>10n}")
+    print(f"Edges:         {sum(edge_counts):>10n}")
+    print(f"Mean edges:    {round(mean(edge_counts)):>10n}")
+    print(f"Median edges:  {median(edge_counts):>10n}")
+    print(f"Size on disk:  {naturalsize(size):>10}")
 
 
 @app.command()
@@ -117,4 +120,33 @@ def get_config():
         value = getattr(config, setting)
         item = f"{setting:{padding_len}}{str(value)}"
         results.append(item)
-    typer.echo("\n".join(results))
+    print("\n".join(results))
+
+
+@app.command()
+def id_lookup(
+    user_id: str = typer.Argument(
+        ...,
+        callback=user_id_callback,
+        help="The Twitter ID to lookup.",
+    ),
+    json: bool = typer.Option(
+        False,
+        help="Display JSON from API response instead of a cleaned User model.",
+    ),
+):
+    response = requests.get(
+        f"https://api.twitter.com/2/users/{user_id}",
+        headers=http_utils.create_headers(),
+        params=http_utils.prepare_params({"user.fields": USER_FIELDS}),
+    )
+    response.raise_for_status()
+    data = response.json()
+    if "data" not in data:
+        print(f"Retrieving user with ID {user_id} failed. Response:")
+        print_json(data)
+    if json:
+        print_json(data=response.json())
+        return
+    user = User.from_data(data["data"])
+    print(user)

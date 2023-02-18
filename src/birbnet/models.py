@@ -4,6 +4,23 @@ from typing import Self
 
 from pydantic.dataclasses import dataclass
 
+USER_FIELDS = [
+    "created_at",
+    "description",
+    "entities",
+    "id",
+    "location",
+    "name",
+    "pinned_tweet_id",
+    "profile_image_url",
+    "protected",
+    "public_metrics",
+    "url",
+    "username",
+    "verified",
+    "withheld",
+]
+
 
 @dataclass
 class User:
@@ -24,8 +41,12 @@ class User:
     profile_image_url: str
 
     @classmethod
-    def from_json(cls, json_str: dict) -> Self:
-        data = json.loads(json_str)
+    def from_json(cls, data_str: str) -> Self:
+        data = json.loads(data_str)
+        return cls.from_data(data)
+
+    @classmethod
+    def from_data(cls, data: dict) -> Self:
         urls = list(
             {
                 url.get("expanded_url", url["url"])
