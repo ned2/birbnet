@@ -166,9 +166,9 @@ class UserFetcher:
                 }
             ),
         )
+        response.raise_for_status()
         api_requests += 1
         logger.info("Request number: %d", api_requests)
-        response.raise_for_status()
         return response.json()
 
     def write_users(self, users: dict, force: bool = False) -> None:
@@ -183,6 +183,3 @@ class UserFetcher:
         with jsonlines.open(self.output_path, "r", loads=orjson.loads) as reader:
             users = [user for user in reader]
         return users
-
-
-# TODO add this to the requests session

@@ -1,5 +1,3 @@
-from collections.abc import Iterable
-
 from . import config
 from .exceptions import MisconfiguredException
 
@@ -15,7 +13,7 @@ def prepare_params(params: dict) -> dict:
     """Convert dictionary into a prepared params dictionary."""
     preppared_params = {}
     for key, value in params.items():
-        if isinstance(value, Iterable):
+        if isinstance(value, (list, tuple, set)):
             preppared_params[key] = ",".join(value)
         else:
             preppared_params[key] = value
