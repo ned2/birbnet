@@ -24,7 +24,7 @@ mdurl==0.1.2
     # via markdown-it-py
 orjson==3.8.6
     # via -r requirements.in
-pydantic==1.10.4
+pydantic==1.10.5
     # via -r requirements.in
 pygments==2.14.0
     # via rich
@@ -36,7 +36,7 @@ rich==13.3.1
     # via -r requirements.in
 typer==0.7.0
     # via -r requirements.in
-typing-extensions==4.4.0
+typing-extensions==4.5.0
     # via pydantic
 urllib3==1.26.14
     # via requests
