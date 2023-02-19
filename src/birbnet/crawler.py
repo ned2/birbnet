@@ -1,7 +1,6 @@
 import logging
 import os
 from datetime import datetime
-from functools import cache
 from pathlib import Path
 
 import jsonlines
@@ -66,10 +65,19 @@ class BirbCrawler:
         new_depth = current_depth + 1
         logger.info("Crawler at depth %d", new_depth)
         for i, user_id in enumerate(user_ids):
-            new_user_ids = get_user_ids(user_id, self.edge, run_id=self.run_id)
+            user_fetcher = UserFetcher(user_id, self.edge, run_id=self.run_id)
+            if user_fetcher.exists():
+                users = user_fetcher.read_users()
+                source = "LOADED"
+            else:
+                users = user_fetcher.fetch_users()
+                user_fetcher.write_users(users)
+                source = "FETCHED"
+            new_user_ids = [user["id"] for user in users]
             logger.info(
-                "Depth %d: retrieved %d users for user %s (%d/%d)",
+                "Depth %d: %s %d users for user %s (%d/%d)",
                 new_depth,
+                source,
                 len(new_user_ids),
                 user_id,
                 i + 1,
@@ -77,14 +85,6 @@ class BirbCrawler:
             )
             self.crawled_count += len(new_user_ids)
             self.crawl(user_ids=new_user_ids, current_depth=new_depth)
-
-
-@cache
-def get_user_ids(user_id: str, edge: Edge, run_id: str | None = None):
-    user_fetcher = UserFetcher(user_id, edge, run_id=run_id)
-    users = user_fetcher.fetch_users()
-    user_fetcher.write_users(users)
-    return [user["id"] for user in users]
 
 
 class UserFetcher:
@@ -106,6 +106,7 @@ class UserFetcher:
             total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]
         )
         session = requests.Session()
+        session.headers.update(http_utils.create_headers())
         session.mount("http://", HTTPAdapter(max_retries=retries))
         return session
 
@@ -157,7 +158,6 @@ class UserFetcher:
         global api_requests
         response = self.session.get(
             self.request_url,
-            headers=http_utils.create_headers(),
             params=http_utils.prepare_params(
                 {
                     "max_results": max_results,
@@ -171,6 +171,9 @@ class UserFetcher:
         logger.info("Request number: %d", api_requests)
         return response.json()
 
+    def exists(self) -> bool:
+        return self.output_path.exists()
+
     def write_users(self, users: dict, force: bool = False) -> None:
         if self.output_path.exists() and not force:
             logger.info("Skipping already retrieved data: %s", self.output_path.name)
@@ -179,7 +182,7 @@ class UserFetcher:
         with jsonlines.open(self.output_path, "w") as writer:
             writer.write_all(users)
 
-    def read_users(self) -> dict:
+    def read_users(self) -> list[dict]:
         with jsonlines.open(self.output_path, "r", loads=orjson.loads) as reader:
             users = [user for user in reader]
         return users
