@@ -73,16 +73,16 @@ class BirbCrawler:
                 users = user_fetcher.fetch_users()
                 user_fetcher.write_users(users)
                 source = "FETCHED"
-            new_user_ids = [user["id"] for user in users]
             logger.info(
                 "Depth %d: %s %d users for user %s (%d/%d)",
                 new_depth,
                 source,
-                len(new_user_ids),
+                len(users),
                 user_id,
                 i + 1,
                 len(user_ids),
             )
+            new_user_ids = [user["id"] for user in users]
             self.crawled_count += len(new_user_ids)
             self.crawl(user_ids=new_user_ids, current_depth=new_depth)
 

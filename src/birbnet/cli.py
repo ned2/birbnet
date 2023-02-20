@@ -74,6 +74,7 @@ def get_users(
         )
     )
     crawler = BirbCrawler(user_id=user_id, edge=edge, depth=depth, run_id=run_id)
+    # TODO: catch ctl-c etc and exit gracefully
     crawler.crawl()
     # TODO: write out other stats such as output location
     print(f"Retrieved {crawler.crawled_count} users from Twitter.")
