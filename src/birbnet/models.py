@@ -1,8 +1,9 @@
-import json
 from datetime import datetime
 from typing import Self
 
+import orjson
 from pydantic.dataclasses import dataclass
+
 
 USER_FIELDS = [
     "created_at",
@@ -42,7 +43,7 @@ class User:
 
     @classmethod
     def from_json(cls, data_str: str) -> Self:
-        data = json.loads(data_str)
+        data = orjson.loads(data_str)
         return cls.from_data(data)
 
     @classmethod
@@ -79,7 +80,7 @@ class User:
             followers_count=data["public_metrics"]["followers_count"],
             following_count=data["public_metrics"]["following_count"],
             tweet_count=data["public_metrics"]["tweet_count"],
-            listed_count=data["public_metrics"]["listed_count"],
+            listed_count=data["public_metrics"].get("listed_count", 0),
             urls=urls,
             mentions=mentions,
             profile_image_url=data["profile_image_url"],
