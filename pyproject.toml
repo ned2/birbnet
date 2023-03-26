@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "birbnet"
+version = "0.0.1"
+description = "A tool for crawling and analysing Twitter social graphs."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Ned Letcher", email = "ned@nedned.net" },
+]
+classifiers = [
+  "Programming Language :: Python",
+]
+dependencies = [
+  "humanize",
+  "jsonlines",
+  "orjson",
+  "pydantic",
+  "ratelimit",
+  "requests",
+  "rich",
+  "typer",
+]
+
+[project.urls]
+homepage = "https://github.com/ned2/birbnet"
+
+[project.scripts]
+birbnet = "birbnet.cli:app"
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "ipdb",
+  "jupyterlab",
+  "jupyterlab-code-formatter",
+  "numpy",
+  "ptpython",
+  "scipy",
+]
+analysis = [
+  "numpy",
+  "scipy",
+]
