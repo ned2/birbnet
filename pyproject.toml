@@ -37,6 +37,7 @@ birbnet = "birbnet.cli:app"
 dev = [
   "black",
   "ipdb",
+  "pre-commit",
   "ptpython",
 ]
 analysis = [
