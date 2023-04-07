@@ -53,7 +53,7 @@ the current state of the crawl from any existing output in crawl run directory.
 
 For documentation of this command:
 
-    `birbnet get-users --help`
+    birbnet get-users --help
 
 To get statistics for the output of an existing run, optionally saving granular
 stats with the number of unique nodes and edges added with each crawled user to
@@ -61,8 +61,22 @@ a Parquet file with the `--stats-path` flag:
 
     birbnet crawl-stats <path-to-run-output> (--stats-path <path-to-output>>)
 
+For documentation of this command:
 
-## Updating pinned deps
+    birbnet crawl-stats --help
+
+
+## Updating pinned dependencies
+
+Make sure pip-tools is installed:
 
     pip install pip-tools
+
+After making changes to dependencies in pyproject.toml:
+
     pip-compile -U --resolver=backtracking --extra dev --extra analysis -o requirements-all.txt pyproject.toml
+
+
+To update all dependencies:
+
+    pip-compile --upgrade --resolver=backtracking --extra dev --extra analysis -o requirements-all.txt pyproject.toml
