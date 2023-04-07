@@ -18,7 +18,9 @@ dependencies = [
   "humanize",
   "jsonlines",
   "orjson",
+  "pandas",
   "pydantic",
+  "pyarrow",
   "ratelimit",
   "requests",
   "rich",
@@ -35,13 +37,13 @@ birbnet = "birbnet.cli:app"
 dev = [
   "black",
   "ipdb",
-  "jupyterlab",
-  "jupyterlab-code-formatter",
-  "numpy",
   "ptpython",
-  "scipy",
 ]
 analysis = [
+  "jupyterlab",
+  "jupyterlab-code-formatter",
+  "matplotlib",
   "numpy",
+  "plotly",
   "scipy",
 ]

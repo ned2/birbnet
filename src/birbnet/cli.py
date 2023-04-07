@@ -7,6 +7,7 @@ from typing import Optional
 
 import jsonlines
 import orjson
+import pandas as pd
 import requests
 import typer
 from humanize import naturalsize
@@ -89,6 +90,10 @@ def crawl_stats(
         readable=True,
         help="Path to crawler run output for deriving stats for.",
     ),
+    stats_path: Optional[Path] = typer.Option(
+        None,
+        help="If provided, writes granular of each user to supplied path as Parquet",
+    ),
     limit: Optional[int] = typer.Option(
         None,
         help="Number of retrieved users to limit stats to be calculated for.",
@@ -96,14 +101,23 @@ def crawl_stats(
 ):
     all_user_ids = set()
     edge_counts = []
+    node_counts = []
     crawled_paths = list(path.glob("*.json"))[:limit]
     size = 0
     for user_file in track(crawled_paths):
         with jsonlines.open(user_file, "r", loads=orjson.loads) as reader:
             user_ids = [user["id"] for user in reader]
         edge_counts.append(len(user_ids))
+        prev_node_count = len(all_user_ids)
         all_user_ids.update(user_ids)
+        new_node_count = len(all_user_ids) - prev_node_count
+        node_counts.append(new_node_count)
         size += user_file.stat().st_size
+    if stats_path is not None:
+        stats_df = pd.DataFrame(
+            {"nodes_counts": node_counts, "edge_counts": edge_counts}
+        )
+        stats_df.to_parquet(stats_path, compression="snappy", engine="pyarrow")
     print(f"Users crawled: {len(edge_counts):>10n}")
     print(f"Nodes:         {len(all_user_ids):>10n}")
     print(f"Edges:         {sum(edge_counts):>10n}")
