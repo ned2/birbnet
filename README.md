@@ -74,7 +74,7 @@ Make sure pip-tools is installed:
 
 After making changes to dependencies in pyproject.toml:
 
-    pip-compile -U --resolver=backtracking --extra dev --extra analysis -o requirements-all.txt pyproject.toml
+    pip-compile --resolver=backtracking --extra dev --extra analysis -o requirements-all.txt pyproject.toml
 
 
 To update all dependencies:

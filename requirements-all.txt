@@ -31,7 +31,7 @@ babel==2.12.1
     # via jupyterlab-server
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.12.1
+beautifulsoup4==4.12.2
     # via nbconvert
 black==23.3.0
     # via birbnet (pyproject.toml)
@@ -298,6 +298,8 @@ pygments==2.14.0
     #   rich
 pyparsing==3.0.9
     # via matplotlib
+pyrate-limiter==2.10.0
+    # via birbnet (pyproject.toml)
 pyrsistent==0.19.3
     # via jsonschema
 python-dateutil==2.8.2
@@ -321,8 +323,6 @@ pyzmq==25.0.2
     #   jupyter-server
     #   nbclassic
     #   notebook
-ratelimit==2.2.1
-    # via birbnet (pyproject.toml)
 requests==2.28.2
     # via
     #   birbnet (pyproject.toml)

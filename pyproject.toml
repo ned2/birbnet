@@ -21,7 +21,7 @@ dependencies = [
   "pandas",
   "pydantic",
   "pyarrow",
-  "ratelimit",
+  "pyrate_limiter",
   "requests",
   "rich",
   "typer",
