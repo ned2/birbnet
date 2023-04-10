@@ -14,7 +14,7 @@ from humanize import naturalsize
 from rich import print, print_json
 from rich.progress import track
 
-from . import config, http_utils, validate
+from . import config, http_utils, data_utils, validate
 from .config import DEFAULTS
 from .crawler import BirbCrawler
 from .exceptions import MisconfiguredException
@@ -44,6 +44,10 @@ def edge_callback(value: str):
 
 @app.command()
 def get_users(
+    run_id: str = typer.Option(
+        ...,
+        help="ID used to track this run for saving output and resuming",
+    ),
     user_id: Optional[str] = typer.Option(
         config.SEED_USER_ID,
         callback=user_id_callback,
@@ -57,10 +61,6 @@ def get_users(
     depth: Optional[int] = typer.Option(
         DEFAULTS.crawler_depth,
         help="Crawl depth to stop at in the connected user graph.",
-    ),
-    run_id: Optional[str] = typer.Option(
-        None,
-        help="ID used to track this run for saving output and resuming",
     ),
 ):
     logger.setLevel(logging.INFO)
@@ -83,41 +83,46 @@ def get_users(
 
 @app.command()
 def crawl_stats(
-    path: Path = typer.Argument(
+    run_id: str = typer.Argument(
         ...,
-        file_okay=False,
-        exists=True,
-        readable=True,
-        help="Path to crawler run output for deriving stats for.",
+        help="Run ID of dataset to read and write to.",
     ),
-    stats_path: Optional[Path] = typer.Option(
-        None,
-        help="If provided, writes granular of each user to supplied path as Parquet",
-    ),
+    write_edges: bool = typer.Option(False, "--write-edges"),    
     limit: Optional[int] = typer.Option(
         None,
         help="Number of retrieved users to limit stats to be calculated for.",
     ),
 ):
+    run_dataset = data_utils.RunDataset(run_id)
+    crawled_paths = list(run_dataset.users_path.glob("*.json"))[:limit]
     all_user_ids = set()
+    edges = []
     edge_counts = []
     node_counts = []
-    crawled_paths = list(path.glob("*.json"))[:limit]
     size = 0
     for user_file in track(crawled_paths):
         with jsonlines.open(user_file, "r", loads=orjson.loads) as reader:
             user_ids = [user["id"] for user in reader]
+        if write_edges:
+            source_user_id = int(data_utils.get_user_id_from_path(user_file))
+            edges.extend([(source_user_id, int(user_id)) for user_id in user_ids])
         edge_counts.append(len(user_ids))
         prev_node_count = len(all_user_ids)
         all_user_ids.update(user_ids)
         new_node_count = len(all_user_ids) - prev_node_count
         node_counts.append(new_node_count)
         size += user_file.stat().st_size
-    if stats_path is not None:
-        stats_df = pd.DataFrame(
-            {"nodes_counts": node_counts, "edge_counts": edge_counts}
+    # write output files
+    stats_df = pd.DataFrame({"nodes_counts": node_counts, "edge_counts": edge_counts})
+    stats_df.to_parquet(
+        run_dataset.crawl_stats_path, compression="snappy", engine="pyarrow"
+    )
+    if write_edges:
+        edges_df = pd.DataFrame(edges, columns=["source", "target"])
+        edges_df.to_parquet(
+            run_dataset.edges_path, compression="snappy", engine="pyarrow"
         )
-        stats_df.to_parquet(stats_path, compression="snappy", engine="pyarrow")
+    # print stats output
     print(f"Users crawled: {len(edge_counts):>10n}")
     print(f"Nodes:         {len(all_user_ids):>10n}")
     print(f"Edges:         {sum(edge_counts):>10n}")

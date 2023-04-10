@@ -9,7 +9,7 @@ import requests
 from pyrate_limiter import Duration, Limiter, RequestRate
 from requests.adapters import HTTPAdapter, Retry
 
-from . import config, http_utils, validate
+from . import config, http_utils, data_utils, validate
 from .config import DEFAULTS
 from .models import USER_FIELDS
 from .types import Edge
@@ -66,7 +66,7 @@ class BirbCrawler:
         logger.info("Crawler at depth %d", new_depth)
         for i, user_id in enumerate(user_ids):
             user_fetcher = UserFetcher(user_id, self.edge, run_id=self.run_id)
-            if user_fetcher.exists():
+            if user_fetcher.output_path.exists():
                 users = user_fetcher.read_users()
                 source = "LOADED"
             else:
@@ -97,8 +97,7 @@ class UserFetcher:
     ):
         self.user_id = user_id
         self.edge = edge
-        self.run_id = run_id
-        self.output_dir_path = output_dir_path or config.DATA_PATH
+        self.run_dataset = data_utils.RunDataset(run_id, self.output_dir_path)
         self.session = self._make_session()
 
     def _make_session(self):
@@ -117,9 +116,7 @@ class UserFetcher:
     @property
     def output_path(self) -> Path:
         file_name = f"{self.user_id}_{self.edge}.json"
-        if self.run_id:
-            return self.output_dir_path / self.run_id / file_name
-        return self.output_dir_path / file_name
+        return self.run_dataset.get_user_path(file_name)
 
     def fetch_users(
         self,
@@ -170,9 +167,6 @@ class UserFetcher:
         api_requests += 1
         logger.info("Request number: %d", api_requests)
         return response.json()
-
-    def exists(self) -> bool:
-        return self.output_path.exists()
 
     def write_users(self, users: dict, force: bool = False) -> None:
         if self.output_path.exists() and not force:
