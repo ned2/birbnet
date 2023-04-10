@@ -84,6 +84,8 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
+importlib-metadata==6.3.0
+    # via visidata
 ipdb==0.13.13
     # via birbnet (pyproject.toml)
 ipykernel==6.22.0
@@ -153,7 +155,7 @@ jupyter-server==2.5.0
     #   jupyterlab-server
     #   nbclassic
     #   notebook-shim
-jupyter-server-fileid==0.8.0
+jupyter-server-fileid==0.9.0
     # via jupyter-server-ydoc
 jupyter-server-terminals==0.4.4
     # via jupyter-server
@@ -230,7 +232,7 @@ numpy==1.24.2
     #   pandas
     #   pyarrow
     #   scipy
-orjson==3.8.9
+orjson==3.8.10
     # via birbnet (pyproject.toml)
 packaging==23.0
     # via
@@ -308,6 +310,7 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
+    #   visidata
 python-json-logger==2.0.7
     # via jupyter-events
 pytz==2023.3
@@ -402,6 +405,8 @@ urllib3==1.26.15
     # via requests
 virtualenv==20.21.0
     # via pre-commit
+visidata==2.11
+    # via birbnet (pyproject.toml)
 wcwidth==0.2.6
     # via prompt-toolkit
 webcolors==1.13
@@ -418,6 +423,8 @@ y-py==0.5.9
     #   ypy-websocket
 ypy-websocket==0.8.2
     # via jupyter-server-ydoc
+zipp==3.15.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
