@@ -1,7 +1,6 @@
 import locale
 import logging
 from inspect import cleandoc
-from pathlib import Path
 from statistics import mean, median
 from typing import Optional
 
@@ -44,7 +43,7 @@ def edge_callback(value: str):
 
 @app.command()
 def get_users(
-    run_id: str = typer.Option(
+    run_id: str = typer.Argument(
         ...,
         help="ID used to track this run for saving output and resuming",
     ),
@@ -85,7 +84,7 @@ def crawl_stats(
         ...,
         help="Run ID of dataset to read and write to.",
     ),
-    write_edges: bool = typer.Option(False, "--write-edges"),    
+    write_edges: bool = typer.Option(False, "--write-edges"),
     limit: Optional[int] = typer.Option(
         None,
         help="Number of retrieved users to limit stats to be calculated for.",

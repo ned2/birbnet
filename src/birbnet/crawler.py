@@ -97,7 +97,7 @@ class UserFetcher:
     ):
         self.user_id = user_id
         self.edge = edge
-        self.run_dataset = data_utils.RunDataset(run_id, self.output_dir_path)
+        self.run_dataset = data_utils.RunDataset(run_id, output_dir_path)
         self.session = self._make_session()
 
     def _make_session(self):
