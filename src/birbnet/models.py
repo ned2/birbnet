@@ -23,7 +23,7 @@ USER_FIELDS = [
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class User:
     id: str
     description: str
