@@ -12,19 +12,19 @@ authors = [
   { name = "Ned Letcher", email = "ned@nedned.net" },
 ]
 classifiers = [
-  "Programming Language :: Python",
+    "Programming Language :: Python",
 ]
 dependencies = [
-  "humanize",
-  "jsonlines",
-  "orjson",
-  "pandas",
-  "pydantic",
-  "pyarrow",
-  "pyrate_limiter",
-  "requests",
-  "rich",
-  "typer",
+    "humanize",
+    "jsonlines",
+    "orjson",
+    "pandas",
+    "pydantic",
+    "pyarrow",
+    "pyrate_limiter",
+    "requests",
+    "rich",
+    "typer",
 ]
 
 [project.urls]
@@ -35,17 +35,20 @@ birbnet = "birbnet.cli:app"
 
 [project.optional-dependencies]
 dev = [
-  "black",
-  "ipdb",
-  "pre-commit",
-  "ptpython",
+    "black",
+    "ipdb",
+    "pre-commit",
+    "ptpython",
 ]
 analysis = [
-  "jupyterlab",
-  "jupyterlab-code-formatter",
-  "matplotlib",
-  "numpy",
-  "plotly",
-  "scipy",
-  "visidata",
+    "duckdb",
+    "duckdb-engine",
+    "jupysql",
+    "jupyterlab",
+    "jupyterlab-code-formatter",
+    "matplotlib",
+    "numpy",
+    "plotly",
+    "scipy",
+    "visidata",
 ]
