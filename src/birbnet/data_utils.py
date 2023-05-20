@@ -6,7 +6,7 @@ from . import config
 
 class RunDataset:
     def __init__(self, run_id: str | None = None, output_dir_path: os.PathLike = None):
-        self.run_id = run_id or ""            
+        self.run_id = run_id or ""
         self.output_dir_path = output_dir_path or config.DATA_PATH
 
     def get_user_path(self, file_name):
@@ -24,6 +24,10 @@ class RunDataset:
     def edges_path(self):
         return self.output_dir_path / self.run_id / "edges.parquet"
 
+    @property
+    def users_json_glob(self):
+        return self.users_path / "*.json"
 
-def get_user_id_from_path(user_path: os.PathLike) -> str:
-    return Path(user_path).name.split("_")[0]
+
+def get_user_id_from_path(user_path: os.PathLike) -> int:
+    return int(Path(user_path).name.split("_")[0])

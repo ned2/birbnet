@@ -85,30 +85,34 @@ def crawl_stats(
         help="Run ID of dataset to read and write to.",
     ),
     write_edges: bool = typer.Option(False, "--write-edges"),
-    limit: Optional[int] = typer.Option(
-        None,
-        help="Number of retrieved users to limit stats to be calculated for.",
-    ),
 ):
     run_dataset = data_utils.RunDataset(run_id)
-    crawled_paths = list(run_dataset.users_path.glob("*.json"))[:limit]
+    crawled_paths = run_dataset.users_path.glob("*.json")
     all_user_ids = set()
     edges = []
     edge_counts = []
     node_counts = []
     size = 0
-    for user_file in track(crawled_paths):
+    for user_file in track(list(crawled_paths)):
         with jsonlines.open(user_file, "r", loads=orjson.loads) as reader:
-            user_ids = [user["id"] for user in reader]
+            user_ids = [int(user["id"]) for user in reader]
         if write_edges:
-            source_user_id = int(data_utils.get_user_id_from_path(user_file))
-            edges.extend([(source_user_id, int(user_id)) for user_id in user_ids])
+            source_user_id = data_utils.get_user_id_from_path(user_file)
+            edges.extend([(source_user_id, user_id) for user_id in user_ids])
         edge_counts.append(len(user_ids))
         prev_node_count = len(all_user_ids)
         all_user_ids.update(user_ids)
         new_node_count = len(all_user_ids) - prev_node_count
         node_counts.append(new_node_count)
         size += user_file.stat().st_size
+    # print stats output
+    print(f"Users crawled: {len(edge_counts):>12n}")
+    print(f"Nodes:         {len(all_user_ids):>12n}")
+    print(f"Edges:         {sum(edge_counts):>12n}")
+    print(f"Mean edges:    {round(mean(edge_counts)):>12n}")
+    print(f"Median edges:  {median(edge_counts):>12n}")
+    print(f"Size on disk:  {naturalsize(size):>12}")
+
     # write output files
     stats_df = pd.DataFrame({"nodes_counts": node_counts, "edge_counts": edge_counts})
     stats_df.to_parquet(
@@ -119,13 +123,6 @@ def crawl_stats(
         edges_df.to_parquet(
             run_dataset.edges_path, compression="snappy", engine="pyarrow"
         )
-    # print stats output
-    print(f"Users crawled: {len(edge_counts):>10n}")
-    print(f"Nodes:         {len(all_user_ids):>10n}")
-    print(f"Edges:         {sum(edge_counts):>10n}")
-    print(f"Mean edges:    {round(mean(edge_counts)):>10n}")
-    print(f"Median edges:  {median(edge_counts):>10n}")
-    print(f"Size on disk:  {naturalsize(size):>10}")
 
 
 @app.command()
