@@ -46,6 +46,7 @@ analysis = [
     "jupysql",
     "jupyterlab",
     "jupyterlab-code-formatter",
+    "magic_duckdb",
     "matplotlib",
     "numpy",
     "plotly",
