@@ -1,4 +1,4 @@
-Steps to install Graph Tool on Ubuntu 22.10:
+# Steps to install Graph Tool on Ubuntu 22.10:
 
 - download latest graph tool release (cloning repo won't work): https://graph-tool.skewed.de/download
 - unzip and move to graph tool directory
