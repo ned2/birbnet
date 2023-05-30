@@ -6,7 +6,7 @@
 #
 annotated-types==0.4.0
     # via pydantic
-anyio==3.7.0rc1
+anyio==3.7.0
     # via jupyter-server
 appdirs==1.4.4
     # via ptpython
@@ -66,7 +66,7 @@ defusedxml==0.7.1
     # via nbconvert
 distlib==0.3.6
     # via virtualenv
-duckdb==0.8.1.dev23
+duckdb==0.8.1.dev152
     # via
     #   birbnet (pyproject.toml)
     #   duckdb-engine
@@ -75,7 +75,7 @@ duckdb-engine==0.7.3
     # via birbnet (pyproject.toml)
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.16.3
+fastjsonschema==2.17.1
     # via nbformat
 filelock==3.12.0
     # via virtualenv
@@ -104,6 +104,7 @@ ipython==8.13.2
     # via
     #   ipdb
     #   ipykernel
+    #   jupysql
 ipython-genutils==0.2.0
     # via jupysql
 isoduration==20.11.0
@@ -132,7 +133,7 @@ jsonschema[format-nongpl]==4.18.0a7
     #   nbformat
 jsonschema-specifications==2023.5.1
     # via jsonschema
-jupysql==0.7.4
+jupysql==0.7.5
     # via birbnet (pyproject.toml)
 jupyter-client==8.2.0
     # via
@@ -152,7 +153,7 @@ jupyter-events==0.6.3
     # via jupyter-server
 jupyter-lsp==2.1.0
     # via jupyterlab
-jupyter-server==2.5.0
+jupyter-server==2.6.0
     # via
     #   jupyter-lsp
     #   jupyterlab
@@ -163,7 +164,7 @@ jupyter-server-terminals==0.4.4
     # via jupyter-server
 jupyterlab==4.0.0
     # via birbnet (pyproject.toml)
-jupyterlab-code-formatter==2.1.0rc0
+jupyterlab-code-formatter==2.2.1
     # via birbnet (pyproject.toml)
 jupyterlab-pygments==0.2.2
     # via nbconvert
@@ -171,7 +172,7 @@ jupyterlab-server==2.22.1
     # via jupyterlab
 kiwisolver==1.4.4
     # via matplotlib
-magic-duckdb==0.1.26b2
+magic-duckdb==0.1.26
     # via birbnet (pyproject.toml)
 markdown-it-py==2.2.0
     # via rich
@@ -193,7 +194,7 @@ monotonic==1.6
     # via posthog
 mypy-extensions==1.0.0
     # via black
-nbclient==0.7.4
+nbclient==0.8.0
     # via nbconvert
 nbconvert==7.4.0
     # via jupyter-server
@@ -217,8 +218,10 @@ numpy==1.24.3
     #   pandas
     #   pyarrow
     #   scipy
-orjson==3.8.12
+orjson==3.8.14
     # via birbnet (pyproject.toml)
+overrides==7.3.1
+    # via jupyter-server
 packaging==23.1
     # via
     #   black
@@ -251,7 +254,7 @@ platformdirs==3.5.1
     #   black
     #   jupyter-core
     #   virtualenv
-ploomber-core==0.2.10
+ploomber-core==0.2.11
     # via jupysql
 plotly==5.14.1
     # via birbnet (pyproject.toml)
@@ -261,7 +264,7 @@ pre-commit==3.3.2
     # via birbnet (pyproject.toml)
 prettytable==3.7.0
     # via jupysql
-prometheus-client==0.16.0
+prometheus-client==0.17.0
     # via jupyter-server
 prompt-toolkit==3.0.38
     # via
@@ -312,16 +315,16 @@ pyyaml==6.0
     #   jupyter-events
     #   ploomber-core
     #   pre-commit
-pyzmq==25.0.2
+pyzmq==25.1.0
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-referencing==0.28.2
+referencing==0.28.5
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.30.0
+requests==2.31.0
     # via
     #   birbnet (pyproject.toml)
     #   jupyterlab-server
@@ -359,7 +362,7 @@ sqlalchemy==2.0.15
     # via
     #   duckdb-engine
     #   jupysql
-sqlglot==13.3.0
+sqlglot==14.1.1
     # via jupysql
 sqlparse==0.4.4
     # via jupysql
@@ -396,7 +399,7 @@ traitlets==5.9.0
     #   nbformat
 typer==0.9.0
     # via birbnet (pyproject.toml)
-typing-extensions==4.5.0
+typing-extensions==4.6.2
     # via
     #   async-lru
     #   pydantic
@@ -422,7 +425,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via jupyter-server
 zipp==3.15.0
     # via importlib-metadata

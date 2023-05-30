@@ -62,6 +62,7 @@ def get_users(
         help="Crawl depth to stop at in the connected user graph.",
     ),
 ):
+    """Run the crawler starting at a specific user ID."""
     logger.setLevel(logging.INFO)
     print(
         cleandoc(
@@ -79,13 +80,28 @@ def get_users(
 
 
 @app.command()
+def make_db(
+    run_id: str = typer.Argument(
+        ...,
+        help="Run ID of dataset to transform and create a DB from.",
+    ),
+    table_name: str = typer.Option("users", "--table-name"),
+):
+    """Create a DuckDB database with cleaned & transformed results from a crawl."""
+    run_dataset = data_utils.RunDataset(run_id)
+    run_dataset.make_db(table_name)
+    print(f"Successfully made and wrote database to {run_dataset.db_path}")
+
+
+@app.command()
 def crawl_stats(
     run_id: str = typer.Argument(
         ...,
-        help="Run ID of dataset to read and write to.",
+        help="Run ID of dataset to generate stats for.",
     ),
     write_edges: bool = typer.Option(False, "--write-edges"),
 ):
+    """Calculate and print statistics about the output of a target crawl."""
     run_dataset = data_utils.RunDataset(run_id)
     crawled_paths = run_dataset.users_path.glob("*.json")
     all_user_ids = set()
@@ -126,18 +142,6 @@ def crawl_stats(
 
 
 @app.command()
-def get_config():
-    settings = [val for val in config.__dict__ if val.isupper()]
-    padding_len = max(len(val) for val in settings) + 4
-    results = []
-    for setting in settings:
-        value = getattr(config, setting)
-        item = f"{setting:{padding_len}}{str(value)}"
-        results.append(item)
-    print("\n".join(results))
-
-
-@app.command()
 def id_lookup(
     user_id: str = typer.Argument(
         ...,
@@ -149,6 +153,7 @@ def id_lookup(
         help="Display JSON from API response instead of a cleaned User model.",
     ),
 ):
+    """Use to Twitter API to retrieve details about a target user from their ID."""
     response = requests.get(
         f"https://api.twitter.com/2/users/{user_id}",
         headers=http_utils.create_headers(),
@@ -164,3 +169,16 @@ def id_lookup(
         return
     user = User.from_data(data["data"])
     print(user)
+
+
+@app.command()
+def get_config():
+    """Display the current configuration of Birbnet."""
+    settings = [val for val in config.__dict__ if val.isupper()]
+    padding_len = max(len(val) for val in settings) + 4
+    results = []
+    for setting in settings:
+        value = getattr(config, setting)
+        item = f"{setting:{padding_len}}{str(value)}"
+        results.append(item)
+    print("\n".join(results))

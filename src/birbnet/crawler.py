@@ -65,7 +65,7 @@ class BirbCrawler:
         new_depth = current_depth + 1
         logger.info("Crawler at depth %d", new_depth)
         for i, user_id in enumerate(user_ids):
-            if user_id in {"5380672", "87403396", "17881816", "37599351"}:
+            if user_id in {"5380672", "87403396", "17881816", "37599351", "15210670"}:
                 logger.info("Depth %d: SKIPPED user %s", new_depth, user_id)
                 continue
             user_fetcher = UserFetcher(user_id, self.edge, run_id=self.run_id)
