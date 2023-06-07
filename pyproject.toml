@@ -42,8 +42,6 @@ dev = [
 ]
 analysis = [
     "duckdb",
-    "duckdb-engine",
-    "jupysql",
     "jupyterlab",
     "jupyterlab-code-formatter",
     "magic_duckdb",
