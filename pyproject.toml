@@ -15,13 +15,14 @@ classifiers = [
     "Programming Language :: Python",
 ]
 dependencies = [
+    "duckdb",
     "humanize",
     "jsonlines",
     "orjson",
     "pandas",
     "pydantic",
     "pyarrow",
-    "pyrate_limiter",
+    "pyrate_limiter<=2.10.0",
     "requests",
     "rich",
     "typer",

@@ -43,13 +43,19 @@ class RunDataset:
         return self.dataset_path / "users" / file_name
 
     def make_duckdb_conn(self) -> DuckDBPyConnection:
-        return duckdb.connect(str(self.db_path))
+        return duckdb.connect(
+            str(self.db_path),
+            config={"preserve_insertion_order": "false"}
+        )
 
     def make_db(self, table_name: str) -> None:
         create_table_sql = create_duckdb_table_sql(table_name, self.users_json_glob)
         conn = self.make_duckdb_conn()
+        print("Creating table...")
         conn.sql(create_table_sql)
+        print("Finished creating table.")
         conn.close()
+        print("Closed connection.")
 
 
 def get_user_id_from_path(user_path: os.PathLike) -> int:
@@ -78,7 +84,7 @@ def create_duckdb_table_sql(table_name: str, users_json_glob: Path | str) -> str
                        [url.expanded_url for url in entities.url.urls] +
                        [url.expanded_url for url in entities.description.urls]
                    ) AS urls,
-            FROM read_ndjson(
+            FROM read_ndjson_objects(
                 '{users_json_glob}',
                 columns={{
                     id: UBIGINT,
