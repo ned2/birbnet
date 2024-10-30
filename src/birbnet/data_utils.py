@@ -84,7 +84,7 @@ def create_duckdb_table_sql(table_name: str, users_json_glob: Path | str) -> str
                        [url.expanded_url for url in entities.url.urls] +
                        [url.expanded_url for url in entities.description.urls]
                    ) AS urls,
-            FROM read_ndjson_objects(
+            FROM read_ndjson(
                 '{users_json_glob}',
                 columns={{
                     id: UBIGINT,
